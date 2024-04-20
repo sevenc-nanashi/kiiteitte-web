@@ -1,0 +1,59 @@
+import { Hono } from "hono";
+import { setup as setupDb } from "./db.js";
+import { consola } from "consola";
+import wellKnown from "./routes/wellKnown.js";
+import ap from "./routes/ap.js";
+import api from "./routes/api.js";
+import { logger } from "hono/logger";
+import { serveStatic } from "hono/bun";
+import { cafeWatcher } from "./cafeWatcher.js";
+
+const log = consola.withTag("index");
+
+log.info(`Starting Kiiteitte in ${Bun.env.NODE_ENV} mode`);
+
+const app = new Hono();
+
+app.use(logger(consola.withTag("http").info));
+app.use("/static/*", serveStatic({ root: "./" }));
+
+app.route("/.well-known", wellKnown);
+app.route("/ap", ap);
+app.route("/api", api);
+
+app.get("/manifest.json", (c) => {
+  return c.json({
+    name: "Kiiteitte",
+    short_name: "Kiiteitte",
+    start_url: "/",
+    display: "standalone",
+    theme_color: "#00ffff",
+    icons: [
+      {
+        src: "/static/icon-256.png",
+        sizes: "256x256",
+        type: "image/png",
+      },
+    ],
+  });
+});
+
+if (Bun.env.NODE_ENV === "development") {
+  log.info("Development mode detected, proxying requests to localhost:5173");
+  app.get("*", (c) => {
+    const url = new URL(c.req.url);
+    url.hostname = "localhost";
+    url.port = "5173";
+    url.protocol = "http";
+    return fetch(url);
+  });
+} else {
+  log.info("Production mode detected, serving static files");
+  app.use(serveStatic({ root: "./dist" }));
+}
+
+
+await setupDb();
+cafeWatcher();
+
+export default { ...app, port: Bun.env.PORT };

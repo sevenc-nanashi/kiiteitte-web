@@ -1,0 +1,7 @@
+node_modules
+private.pem
+
+db
+dist
+key/*
+!key/.gitkeep

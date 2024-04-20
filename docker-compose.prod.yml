@@ -1,0 +1,24 @@
+services:
+  main:
+    image: ghcr.io/sevenc-nanashi/kiiteitte-web:latest
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - ./key:/app/key
+    environment:
+      PORT: ${PORT}
+      DB_HOST: db
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
