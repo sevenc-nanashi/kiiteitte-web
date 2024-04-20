@@ -248,7 +248,9 @@ ap.post("/inbox", async (c) => {
       c.status(204);
       return c.body("");
     }
-    log.warn(`Failed to send Accept: ${await result.text()}`);
+    log.warn(
+      `Failed to send Accept: ${await result.text().then((t) => t.split("\n")[0])}`,
+    );
 
     c.status(500);
     return c.json({

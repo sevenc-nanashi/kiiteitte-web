@@ -36,7 +36,6 @@ export const signRequest = async (
       keyId: `https://${host}/ap/kiiteitte#main-key`,
       authorizationHeaderName: "Signature",
       headers: ["(request-target)", "host", "digest", "date"],
-      expiresIn: 3600,
     },
   );
   return headers;
