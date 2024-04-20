@@ -158,13 +158,17 @@ export const cafeWatcher = async () => {
           [latestSong.video_id],
         )
         .then((r) => r.rows[0]);
-      await db.query(
-        "UPDATE history SET newfaves = $1, spins = $2 WHERE id = $3",
-        [newFaves, spinCount, latestHistory.id],
-      );
-      log.info(
-        `Updated latest song stat: ${newFaves} new faves, ${spinCount} spins`,
-      );
+      if (!latestHistory) {
+        log.warn("Latest song not found");
+      } else {
+        await db.query(
+          "UPDATE history SET newfaves = $1, spins = $2 WHERE id = $3",
+          [newFaves, spinCount, latestHistory.id],
+        );
+        log.info(
+          `Updated latest song stat: ${newFaves} new faves, ${spinCount} spins`,
+        );
+      }
 
       log.info("Waiting for next song");
       await waitUntil(
