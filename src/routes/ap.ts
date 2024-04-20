@@ -241,10 +241,16 @@ ap.post("/inbox", async (c) => {
     });
     if (result.status.toString().startsWith("2")) {
       log.info(`Accepted follow request from ${userInfo.id}`);
-      await db.query<Follower>(
-        "INSERT INTO followers (url, inbox, shared_inbox) VALUES ($1, $2, $3)",
-        [userInfo.id, userInfo.inbox, userInfo.sharedInbox],
-      );
+      if (
+        !(await db
+          .query("SELECT * FROM followers WHERE url = $1", [userInfo.id])
+          .then((r) => r.rowCount))
+      ) {
+        await db.query<Follower>(
+          "INSERT INTO followers (url, inbox, shared_inbox) VALUES ($1, $2, $3)",
+          [userInfo.id, userInfo.inbox, userInfo.sharedInbox],
+        );
+      }
       c.status(204);
       return c.body("");
     }

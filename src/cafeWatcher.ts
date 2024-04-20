@@ -124,19 +124,18 @@ export const cafeWatcher = async () => {
       log.info(`Now playing: ${history.name} (${history.video_id})`);
 
       log.info(`Notifying ${inboxes.size} inboxes`);
+      const body = noteToCreateActivity(historyToActivity(history));
       for (const inbox of inboxes) {
         const inboxUrl = new URL(inbox);
         const headers = await signRequest(
           "POST",
-          JSON.stringify(history),
+          JSON.stringify(body),
           inboxUrl,
         );
         fetch(inbox, {
           method: "POST",
           headers,
-          body: JSON.stringify(
-            noteToCreateActivity(historyToActivity(history)),
-          ),
+          body: JSON.stringify(body),
         }).then(async (response) => {
           if (response.ok) {
             log.info(`Notified ${inbox}`);
