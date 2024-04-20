@@ -220,10 +220,6 @@ ap.post("/inbox", async (c) => {
       });
     }
     log.info(`Followed by ${userInfo.id}`);
-    await db.query<Follower>(
-      "INSERT INTO followers (url, inbox, shared_inbox) VALUES ($1, $2, $3)",
-      [userInfo.id, userInfo.inbox, userInfo.sharedInbox],
-    );
 
     c.header("Content-Type", "application/activity+json");
     const accept = {
@@ -243,11 +239,16 @@ ap.post("/inbox", async (c) => {
       headers,
       body: JSON.stringify(accept),
     });
-    log.info(`Accept status: ${result.status}`);
     if (result.status.toString().startsWith("2")) {
+      log.info(`Accepted follow request from ${userInfo.id}`);
+      await db.query<Follower>(
+        "INSERT INTO followers (url, inbox, shared_inbox) VALUES ($1, $2, $3)",
+        [userInfo.id, userInfo.inbox, userInfo.sharedInbox],
+      );
       c.status(204);
       return c.body("");
     }
+    log.warn(`Failed to send Accept: ${await result.text()}`);
 
     c.status(500);
     return c.json({

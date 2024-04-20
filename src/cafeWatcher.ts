@@ -137,9 +137,15 @@ export const cafeWatcher = async () => {
           body: JSON.stringify(
             noteToCreateActivity(historyToActivity(history)),
           ),
-        }).then((response) =>
-          log.info(`Notified ${inboxUrl}: ${response.status}`),
-        );
+        }).then(async (response) => {
+          if (response.ok) {
+            log.info(`Notified ${inbox}`);
+          } else {
+            log.warn(
+              `Failed to notify ${inbox}: ${await response.text().then((t) => t.split("\n")[0])}`,
+            );
+          }
+        });
       }
 
       const timetable: (Song & { id: number })[] = await fetch(
