@@ -142,6 +142,28 @@ export const setup = async () => {
     await db.query("ALTER TABLE histories RENAME COLUMN name TO title");
     version++;
   }
+  if (version === 7) {
+    log.info("7: Adding unique constraint to followers table...");
+    const followers = await db.query<Follower>("SELECT * FROM followers");
+    for (const follower of followers.rows) {
+      await db.query("DELETE FROM followers WHERE id = $1", [follower.id]);
+    }
+    await db.query(
+      "ALTER TABLE followers ADD CONSTRAINT unique_url UNIQUE (url)",
+    );
+    const uniqueFollowers = new Set<string>();
+    for (const follower of followers.rows) {
+      if (uniqueFollowers.has(follower.url)) {
+        continue;
+      }
+      uniqueFollowers.add(follower.url);
+      await db.query(
+        "INSERT INTO followers (url, inbox, shared_inbox) VALUES ($1, $2, $3)",
+        [follower.url, follower.inbox, follower.shared_inbox],
+      );
+    }
+    version++;
+  }
 
   log.info("Committing changes...");
   await db.query("UPDATE versions SET version = $1", [version]);
