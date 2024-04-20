@@ -237,7 +237,7 @@ ap.post("/inbox", async (c) => {
     } as APRoot<APAccept>;
 
     const inboxUrl = new URL(userInfo.inbox);
-    const headers = await signRequest("POST", inboxUrl);
+    const headers = await signRequest("POST", JSON.stringify(accept), inboxUrl);
     const result = await fetch(inboxUrl, {
       method: "POST",
       headers,

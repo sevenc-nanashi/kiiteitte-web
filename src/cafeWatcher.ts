@@ -126,7 +126,11 @@ export const cafeWatcher = async () => {
       log.info(`Notifying ${inboxes.size} inboxes`);
       for (const inbox of inboxes) {
         const inboxUrl = new URL(inbox);
-        const headers = await signRequest("POST", inboxUrl);
+        const headers = await signRequest(
+          "POST",
+          JSON.stringify(history),
+          inboxUrl,
+        );
         fetch(inbox, {
           method: "POST",
           headers,
