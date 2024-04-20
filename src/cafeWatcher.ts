@@ -100,8 +100,8 @@ export const cafeWatcher = async () => {
 
       const history = await db
         .query<History>(
-          "INSERT INTO history (" +
-            "video_id, name, author, date, thumbnail, pickup_user_url, pickup_user_name, pickup_user_icon, pickup_playlist_url, new_faves, spins" +
+          "INSERT INTO histories (" +
+            "video_id, title, author, date, thumbnail, pickup_user_url, pickup_user_name, pickup_user_icon, pickup_playlist_url, new_faves, spins" +
             ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
 
           [
@@ -121,7 +121,7 @@ export const cafeWatcher = async () => {
           ],
         )
         .then((r) => r.rows[0]);
-      log.info(`Now playing: ${history.name} (${history.video_id})`);
+      log.info(`Now playing: ${history.title} (${history.video_id})`);
 
       log.info(`Notifying ${inboxes.size} inboxes`);
       const body = noteToCreateActivity(historyToActivity(history));
@@ -163,7 +163,7 @@ export const cafeWatcher = async () => {
 
       const latestHistory = await db
         .query<History>(
-          "SELECT * FROM history WHERE video_id = $1 ORDER BY date DESC LIMIT 1",
+          "SELECT * FROM histories WHERE video_id = $1 ORDER BY date DESC LIMIT 1",
           [latestSong.video_id],
         )
         .then((r) => r.rows[0]);
@@ -171,7 +171,7 @@ export const cafeWatcher = async () => {
         log.warn("Latest song not found");
       } else {
         await db.query(
-          "UPDATE history SET new_faves = $1, spins = $2 WHERE id = $3",
+          "UPDATE histories SET new_faves = $1, spins = $2 WHERE id = $3",
           [newFaves, spinCount, latestHistory.id],
         );
         log.info(

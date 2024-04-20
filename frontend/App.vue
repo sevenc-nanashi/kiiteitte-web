@@ -61,7 +61,7 @@ const fetchMoreHistory = async (state: {
   log.info("Fetching more history");
   const lastId = histories.value[histories.value.length - 1]?.id;
   const newHistories = await fetch(
-    lastId ? `/api/history?start=${lastId}` : "/api/history",
+    lastId ? `/api/history?next=${lastId}` : "/api/history",
   ).then((res) => res.json());
   histories.value.push(...newHistories);
   if (newHistories.length === 0) {

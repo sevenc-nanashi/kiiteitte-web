@@ -11,7 +11,7 @@ export const historyToActivity = (history: History): APRoot<APNote> => {
     published: new Date(history.date).toISOString(),
     to: ["https://www.w3.org/ns/activitystreams#Public"],
     attributedTo: `https://${host}/ap/kiiteitte`,
-    content: `♪${history.name} #${history.video_id} #Kiite\nKiite Cafeできいてます https://cafe.kiite.jp/`,
+    content: `♪${history.title} #${history.video_id} #Kiite\nKiite Cafeできいてます https://cafe.kiite.jp/`,
   };
 };
 

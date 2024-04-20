@@ -64,7 +64,7 @@ const heartSvg = btoa(
           >
         </div>
       </div>
-      <div class="title">{{ props.history.name }}</div>
+      <div class="title">{{ props.history.title }}</div>
       <div class="artist">{{ props.history.author }}</div>
       <div class="stat">
         <span class="spin">回</span>

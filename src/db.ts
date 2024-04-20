@@ -36,7 +36,7 @@ export type Like = {
 export type History = {
   id: number;
   video_id: string;
-  name: string;
+  title: string;
   author: string;
   date: string;
   thumbnail: string;
@@ -125,13 +125,21 @@ export const setup = async () => {
       "ALTER TABLE history RENAME COLUMN pickupplaylisturl TO pickup_playlist_url",
     );
     await db.query("ALTER TABLE history RENAME COLUMN newfaves TO new_faves");
-    await db.query("ALTER TABLE followers RENAME COLUMN sharedinbox TO shared_inbox");
+    await db.query(
+      "ALTER TABLE followers RENAME COLUMN sharedinbox TO shared_inbox",
+    );
 
     version++;
   }
   if (version === 5) {
     log.info("5: Dropping likes table...");
     await db.query("DROP TABLE likes");
+    version++;
+  }
+  if (version === 6) {
+    log.info("6: Renaming history table...");
+    await db.query("ALTER TABLE history RENAME TO histories");
+    await db.query("ALTER TABLE histories RENAME COLUMN name TO title");
     version++;
   }
 

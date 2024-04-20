@@ -313,12 +313,12 @@ ap.post("/inbox", async (c) => {
 ap.get("/outbox", async (c) => {
   c.header("Content-Type", "application/activity+json");
   const historyCount = await db
-    .query<{ count: string }>("SELECT COUNT(*) FROM history")
+    .query<{ count: string }>("SELECT COUNT(*) FROM histories")
     .then((r) => parseInt(r.rows[0].count));
   if (c.req.query("page") === "true") {
     const offset = parseInt(c.req.query("offset") ?? "0");
     const history = await db.query(
-      "SELECT * FROM history ORDER BY date DESC OFFSET $1 LIMIT 10",
+      "SELECT * FROM histories ORDER BY date DESC OFFSET $1 LIMIT 10",
       [offset],
     );
     return c.body(
@@ -361,7 +361,7 @@ ap.get("/outbox", async (c) => {
 });
 
 ap.get("/history/:id", async (c) => {
-  const history = await db.query("SELECT * FROM history WHERE id = $1", [
+  const history = await db.query("SELECT * FROM histories WHERE id = $1", [
     parseInt(c.req.param("id")),
   ]);
   if (history.rowCount === 0) {
