@@ -12,7 +12,7 @@ const key = z.object({
 });
 
 export const httpSignature: MiddlewareHandler = async (c, next) => {
-  if (c.req.raw.method === "GET") {
+  if (["GET", "HEAD"].includes(c.req.raw.method)) {
     return next();
   }
   const log = consola.withTag("httpSignature");
