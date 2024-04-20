@@ -174,8 +174,8 @@ const heartSvg = btoa(
     color: #aaa;
   }
   font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  width: 3rem;
+  padding: 0.25rem 0;
+  width: 4rem;
   display: block;
   text-align: center;
 }

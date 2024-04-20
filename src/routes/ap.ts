@@ -360,4 +360,18 @@ ap.get("/outbox", async (c) => {
   );
 });
 
+ap.get("/history/:id", async (c) => {
+  const history = await db.query("SELECT * FROM history WHERE id = $1", [
+    parseInt(c.req.param("id")),
+  ]);
+  if (history.rowCount === 0) {
+    c.status(404);
+    return c.json({
+      error: "Not Found",
+    });
+  }
+  c.header("Content-Type", "application/activity+json");
+  return c.body(JSON.stringify(historyToActivity(history.rows[0])));
+});
+
 export default ap;

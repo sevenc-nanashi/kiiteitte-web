@@ -29,6 +29,7 @@ const send = async () => {
 };
 </script>
 <template>
+  <div class="desktop-dummy" />
   <div class="app-info">
     <h1>Kiiteitte Web</h1>
     <p>
@@ -64,10 +65,19 @@ const send = async () => {
   </div>
 </template>
 <style scoped lang="scss">
+.desktop-dummy {
+  display: none;
+  @media (min-width: 768px) {
+    display: block;
+    width: 24rem;
+    padding: 1rem;
+  }
+}
 .app-info {
   width: calc(100% - 2rem);
   @media (min-width: 768px) {
     width: 24rem;
+    position: fixed;
   }
 
   height: min-content;

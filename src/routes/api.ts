@@ -13,16 +13,21 @@ api.get(
   zValidator(
     "query",
     z.object({
-      startId: z.number().default(2 ** 31 - 1),
+      start: z.string().optional(),
     }),
   ),
   async (c) => {
-    const history = await db
-      .query<History>(
-        "SELECT * FROM history WHERE id < $1 ORDER BY id DESC LIMIT 100",
-        [c.req.valid("query").startId],
-      )
-      .then((r) => r.rows);
+    const start = c.req.valid("query").start;
+    const history = (
+      start
+        ? await db.query<History>(
+            "SELECT * FROM history WHERE date < (SELECT date FROM history WHERE id = $1) ORDER BY date DESC LIMIT 10",
+            [parseInt(start)],
+          )
+        : await db.query<History>(
+            "SELECT * FROM history ORDER BY date DESC LIMIT 10",
+          )
+    ).rows;
     return c.json(history);
   },
 );

@@ -4,23 +4,13 @@ import AppInfo from "./components/AppInfo.vue";
 import SongInfo from "./components/SongInfo.vue";
 import { History } from "@/db";
 import { consola } from "consola";
+import InfiniteLoading from "v3-infinite-loading";
+import "v3-infinite-loading/lib/style.css";
 
 const log = consola.withTag("App");
 
 const histories = ref<History[]>([]);
 
-const fetchAllHistory = async () => {
-  log.info("Fetching all history");
-  histories.value = await fetch("/api/history").then((res) => res.json());
-
-  const { nextTime } = (await fetch("/api/nextTime").then((res) =>
-    res.json(),
-  )) as {
-    nextTime: number;
-  };
-  log.info("Next fetch time", nextTime);
-  setTimeout(fetchHistory, nextTime);
-};
 const fetchHistory = async () => {
   log.info("Fetching history");
 
@@ -51,6 +41,9 @@ const fetchHistory = async () => {
   histories.value.unshift(newHistories[0]);
   // いいね/回る更新
   histories.value[1] = newHistories[1];
+  scheduleHistoryFetch();
+};
+const scheduleHistoryFetch = async () => {
   const { nextTime } = (await fetch("/api/nextTime").then((res) =>
     res.json(),
   )) as {
@@ -59,8 +52,24 @@ const fetchHistory = async () => {
   log.info("Next fetch time", nextTime);
   setTimeout(fetchHistory, nextTime);
 };
+onMounted(scheduleHistoryFetch);
 
-onMounted(fetchAllHistory);
+const fetchMoreHistory = async (state: {
+  loaded: () => void;
+  complete: () => void;
+}) => {
+  log.info("Fetching more history");
+  const lastId = histories.value[histories.value.length - 1]?.id;
+  const newHistories = await fetch(
+    lastId ? `/api/history?start=${lastId}` : "/api/history",
+  ).then((res) => res.json());
+  histories.value.push(...newHistories);
+  if (newHistories.length === 0) {
+    state.complete();
+  } else {
+    state.loaded();
+  }
+};
 </script>
 <template>
   <div class="container">
@@ -72,12 +81,19 @@ onMounted(fetchAllHistory);
     />
     <AppInfo />
     <div class="song-info-container">
-      <SongInfo
-        v-for="(history, i) in histories"
-        :key="history.id"
-        :index="i"
-        :history="history"
-      />
+      <div class="song-info-list">
+        <SongInfo
+          v-for="(history, i) in histories"
+          :key="history.id"
+          :index="i"
+          :history="history"
+        />
+      </div>
+      <InfiniteLoading @infinite="fetchMoreHistory">
+        <template #complete
+          ><div class="no-more">これ以上の履歴はありません。</div></template
+        >
+      </InfiniteLoading>
     </div>
   </div>
 </template>
@@ -106,8 +122,20 @@ onMounted(fetchAllHistory);
 }
 
 .song-info-container {
+  position: relative;
+  text-align: center;
+}
+.song-info-list {
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+.no-more {
+  background: #0008;
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
 }
 </style>
