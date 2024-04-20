@@ -1,14 +1,15 @@
 import { signRequest as signRequestRaw } from "http-signature";
 import { host } from "./env.js";
+import { createHash } from "crypto"
 
 export const signRequest = async (
   method: string,
   body: string,
   url: URL,
 ): Promise<Record<string, string>> => {
-  const bodyHash = await crypto.subtle
-    .digest("SHA-256", new TextEncoder().encode(body))
-    .then((buf) => Buffer.from(buf).toString("base64"));
+  const bodyHash = createHash("sha-256")
+    .update(body)
+    .digest("base64");
 
   const headers: Record<string, string> = {
     Date: new Date().toUTCString(),
