@@ -166,7 +166,7 @@ export const cafeWatcher = async () => {
         log.warn("Latest song not found");
       } else {
         await db.query(
-          "UPDATE history SET newfaves = $1, spins = $2 WHERE id = $3",
+          "UPDATE history SET new_faves = $1, spins = $2 WHERE id = $3",
           [newFaves, spinCount, latestHistory.id],
         );
         log.info(
