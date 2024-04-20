@@ -138,7 +138,7 @@ export const cafeWatcher = async () => {
             noteToCreateActivity(historyToActivity(history)),
           ),
         }).then((response) =>
-          log.info(`Notified ${inboxUrl.host}: ${response.status}`),
+          log.info(`Notified ${inboxUrl}: ${response.status}`),
         );
       }
 
