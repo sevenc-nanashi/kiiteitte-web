@@ -46,6 +46,82 @@ export const cafeWatcher = async () => {
   const timeDifference = localTime.getTime() - serverTime.getTime();
   log.info(`Time difference: ${timeDifference}ms`);
 
+  const latestHistory = await db
+    .query<History>("SELECT * FROM histories ORDER BY date DESC LIMIT 1")
+    .then((r) => r.rows[0]);
+  if (!latestHistory) {
+    log.info("Latest history not found");
+  } else {
+    log.info(
+      `Latest history: ${latestHistory.title} (${latestHistory.video_id})`,
+    );
+    const timetable: (Song & { id: number })[] = await fetch(
+      "https://cafe.kiite.jp/api/cafe/timetable?limit=100",
+    ).then((r) => r.json());
+    const lastHistoryIndex = timetable.findIndex(
+      (s) => s.video_id === latestHistory.video_id,
+    );
+
+    if (lastHistoryIndex === 0) {
+      log.info("Database is up to date");
+    } else {
+      log.info(
+        `Adding ${lastHistoryIndex === -1 ? 100 : lastHistoryIndex} songs to the database`,
+      );
+      const histories = timetable.slice(
+        0,
+        lastHistoryIndex === -1 ? 100 : lastHistoryIndex,
+      );
+
+      const spins: Record<string, number[]> = await fetch(
+        `https://cafe.kiite.jp/api/cafe/rotate_users?ids=${histories
+          .map((h) => h.id)
+          .join(",")}`,
+      ).then((r) => r.json());
+      for (const history of histories) {
+        const priorityReason = history.reasons.find(
+          (r) => r.type === "priority_playlist",
+        );
+        let user: KiiteUser | undefined;
+        if (priorityReason) {
+          log.info(`Priority playlist found for ${history.title}`);
+          const users = (await fetch(
+            `https://cafeapi.kiite.jp/api/kiite_users?user_ids=${priorityReason.user_id}&ignore_order=1`,
+          ).then((r) => r.json())) as KiiteUser[];
+          user = users[0];
+        } else {
+          log.info(`No priority playlist found`);
+        }
+
+        const newFaves = (history.new_fav_user_ids ?? []).length;
+        const spinCount = spins[history.id]?.length ?? -1;
+
+        await db.query(
+          "INSERT INTO histories (" +
+            "video_id, title, author, date, thumbnail, pickup_user_url, pickup_user_name, pickup_user_icon, pickup_playlist_url, new_faves, spins" +
+            ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+
+          [
+            history.video_id,
+            history.title,
+            history.artist_name,
+            new Date(history.start_time),
+            history.thumbnail,
+            user ? `https://kiite.jp/user/${user.user_name}` : "",
+            user?.nickname ?? "",
+            user?.avatar_url ?? "",
+            priorityReason
+              ? `https://kiite.jp/playlist/${priorityReason.list_id}`
+              : "",
+            newFaves,
+            spinCount,
+          ],
+        );
+        log.info(`Added: ${history.title} (${history.video_id})`);
+      }
+    }
+  }
+
   while (true) {
     try {
       const temporaryData = (await fetch(
@@ -151,7 +227,7 @@ export const cafeWatcher = async () => {
         "https://cafe.kiite.jp/api/cafe/timetable?limit=2",
       ).then((r) => r.json());
       const latestSong =
-        timetable[0].video_id === data.video_id ? timetable[1] : timetable[0];
+        timetable[timetable.findIndex((s) => s.video_id === data.video_id) + 1];
       log.info(
         `Updating latest song stat: ${latestSong.title} (${latestSong.video_id})`,
       );
