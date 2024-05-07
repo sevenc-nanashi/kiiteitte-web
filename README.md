@@ -1,6 +1,7 @@
-# Kiiteitte Web
+# Kiiteitte Web [![@kiiteitte@kw.sevenc7c.com](https://shields.io/badge/@kiiteitte-@kw.sevenc7c.com-555555?labelColor=0ff)](https://kw.sevenc7c.com)
 
 [Kiite Cafe](https://cafe.kiite.jp) の曲を通知したり、履歴を確認したりするための Web サイト。
+ActivityPub 経由でフォローすることもできます。
 
 ## API
 

@@ -36,13 +36,13 @@ const generateItems = async (): Promise<Item[]> => {
 app.get("/atom.xml", async (c) => {
   feed.items = await generateItems();
   c.header("Content-Type", "application/xml");
-  return c.text(feed.atom1());
+  return c.body(feed.atom1());
 });
 
 app.get("/feed.json", async (c) => {
   feed.items = await generateItems();
   c.header("Content-Type", "application/json");
-  return c.json(feed.json1());
+  return c.body(feed.json1());
 });
 
 export default app;

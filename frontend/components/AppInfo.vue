@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { consola } from "consola";
+
 const log = consola.withTag("AppInfo");
 
 const username = ref("");
@@ -27,6 +28,8 @@ const send = async () => {
   log.info("Fetched URL", data);
   window.open(data.url, "_blank");
 };
+
+const host = window.location.origin;
 </script>
 <template>
   <div class="desktop-dummy" />
@@ -35,14 +38,15 @@ const send = async () => {
     <p>
       Kiiteitte は、<a href="https://cafe.kiite.jp">Kiite Cafe</a
       >の選曲情報を表示する非公式のアプリです。<br />
-      ActivityPub に対応しているアプリからフォローすることもできます。
-      RSS にも対応しています。
+      ActivityPub に対応しているアプリからフォローすることもできます。 RSS
+      にも対応しています。
     </p>
+
     <form @submit.prevent="send">
       <div class="form">
         <input
           v-model="username"
-          class="username"
+          class="input username"
           type="text"
           placeholder="@sevenc_nanashi@voskey.icalo.net"
         />
@@ -51,6 +55,14 @@ const send = async () => {
         </button>
       </div>
     </form>
+
+    <input class="input url" type="text" readonly :value="`${host}/feed/atom.xml`" />
+    <input
+      class="input url"
+      type="text"
+      readonly
+      :value="`${host}/feed/feed.json`"
+    />
     <ul class="links">
       <li>開発：<a href="https://sevenc7c.com" target="_blank">名無し｡</a></li>
       <li>
@@ -96,16 +108,23 @@ h1 {
   gap: 0.5rem;
   position: relative;
 }
-.username {
+.input {
   display: block;
   border-radius: 0;
   border: 0;
   background: #fff;
-  padding-left: 0.5rem;
+  padding: 0.5rem;
 
   &:focus {
     outline: 0;
     background: #fffff0;
+  }
+
+  &.url {
+    width: 100%;
+    box-sizing: border-box;
+
+    margin-top: 0.5rem;
   }
 }
 .links {
