@@ -10,6 +10,7 @@
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",
     "consola": "^3.2.3",
+    "feed": "^4.2.2",
     "hono": "^4.2.5",
     "http-signature": "^1.4.0",
     "pg": "^8.11.5",

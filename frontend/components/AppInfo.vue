@@ -36,6 +36,7 @@ const send = async () => {
       Kiiteitte は、<a href="https://cafe.kiite.jp">Kiite Cafe</a
       >の選曲情報を表示する非公式のアプリです。<br />
       ActivityPub に対応しているアプリからフォローすることもできます。
+      RSS にも対応しています。
     </p>
     <form @submit.prevent="send">
       <div class="form">

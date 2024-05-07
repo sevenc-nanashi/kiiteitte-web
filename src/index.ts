@@ -4,6 +4,7 @@ import { consola } from "consola";
 import wellKnown from "./routes/wellKnown.js";
 import ap from "./routes/ap.js";
 import api from "./routes/api.js";
+import feed from "./routes/feed.js";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/bun";
 import { cafeWatcher } from "./cafeWatcher.js";
@@ -20,6 +21,7 @@ app.use("/static/*", serveStatic({ root: "./" }));
 app.route("/.well-known", wellKnown);
 app.route("/ap", ap);
 app.route("/api", api);
+app.route("/feed", feed);
 
 app.get("/manifest.json", (c) => {
   return c.json({
