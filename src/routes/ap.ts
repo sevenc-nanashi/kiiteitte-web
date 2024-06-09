@@ -262,10 +262,10 @@ ap.post("/inbox", async (c) => {
     return c.json({
       error: "Internal Server Error",
     });
-  } else if (data.type === "Undo") {
+  } else if (["Undo", "Delete"].includes(data.type)) {
     const validatedData = z
       .object({
-        type: z.literal("Undo"),
+        type: z.enum(["Undo", "Delete"]),
         actor: z
           .string()
           .url()
