@@ -146,7 +146,12 @@ export const cafeWatcher = async () => {
 
       const data = (await fetch(
         "https://cafe.kiite.jp/api/cafe/next_song",
-      ).then((r) => r.json())) as Song;
+      ).then((r) => r.json())) as Song | null;
+      if (!data) {
+        log.info("Cafe is closed, sleeping 1 minute");
+        await new Promise((resolve) => setTimeout(resolve, 60000));
+        continue
+      }
       log.info(`Next song: ${data.title} (${data.video_id})`);
       const inboxes = new Set<string>();
       for (const follower of await db
