@@ -150,7 +150,7 @@ export const cafeWatcher = async () => {
       if (!data) {
         log.info("Cafe is closed, sleeping 1 minute");
         await new Promise((resolve) => setTimeout(resolve, 60000));
-        continue
+        continue;
       }
       log.info(`Next song: ${data.title} (${data.video_id})`);
       const inboxes = new Set<string>();
