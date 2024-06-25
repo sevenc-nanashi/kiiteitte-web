@@ -38,13 +38,7 @@ const waitUntil = async (timestamp: number) => {
 export const cafeWatcher = async () => {
   log.info("Cafe watcher started");
 
-  const localTime = new Date();
-  const time = await fetch("https://cafe.kiite.jp/api/cafe/time").then((r) =>
-    r.json(),
-  );
-  const serverTime = new Date(time * 1000);
-  const timeDifference = localTime.getTime() - serverTime.getTime();
-  log.info(`Time difference: ${timeDifference}ms`);
+  let timeDifference: number = 0;
 
   const latestHistory = await db
     .query<History>("SELECT * FROM histories ORDER BY date DESC LIMIT 1")
@@ -124,16 +118,23 @@ export const cafeWatcher = async () => {
 
   while (true) {
     try {
+      const localTime = new Date();
+      const time = await fetch("https://cafe.kiite.jp/api/cafe/time").then(
+        (r) => r.json(),
+      );
+      const serverTime = new Date(time * 1000);
+      timeDifference = localTime.getTime() - serverTime.getTime();
+      log.info(`Time difference: ${timeDifference}ms`);
+
       const temporaryData = (await fetch(
         "https://cafe.kiite.jp/api/cafe/next_song",
       ).then((r) => r.json())) as Song;
-      if (
+      const untilNextSong =
         new Date(temporaryData.start_time).getTime() +
-          timeDifference -
-          new Date().getTime() <
-        10000
-      ) {
-        log.info("Song is too close, waiting for next song");
+        timeDifference -
+        new Date().getTime();
+      if (untilNextSong < 10000) {
+        log.info(`Song is too close: ${untilNextSong}ms, waiting more`);
         await waitUntil(
           new Date(temporaryData.start_time).getTime() +
             temporaryData.msec_duration,
