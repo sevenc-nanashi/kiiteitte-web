@@ -136,8 +136,7 @@ export const cafeWatcher = async () => {
       if (untilNextSong < 10000) {
         log.info(`Song is too close: ${untilNextSong}ms, waiting more`);
         await waitUntil(
-          new Date(temporaryData.start_time).getTime() +
-            temporaryData.msec_duration,
+          new Date(temporaryData.start_time).getTime() + 10000
         );
         continue;
       }
