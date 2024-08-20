@@ -1,6 +1,9 @@
 import { APCreate, APNote, APRoot } from "activitypub-types";
-import { History } from "./db.js";
-import { host } from "./env.js";
+import van from "mini-van-plate/van-plate";
+import { History } from "./db.ts";
+import { host } from "./env.ts";
+
+const { p, a } = van.tags;
 
 export const historyToActivity = (history: History): APRoot<APNote> => {
   return {
@@ -11,7 +14,21 @@ export const historyToActivity = (history: History): APRoot<APNote> => {
     published: new Date(history.date).toISOString(),
     to: ["https://www.w3.org/ns/activitystreams#Public"],
     attributedTo: `https://${host}/ap/kiiteitte`,
-    content: `♪${history.title} #${history.video_id} #Kiite\nKiite Cafeできいてます https://cafe.kiite.jp/`,
+    content: p(
+      a(
+        {
+          href: `https://nicovideo.jp/watch/${history.video_id}`,
+        },
+        `♪ ${history.title}`,
+      ),
+      ` #${history.video_id} #Kiite\nKiite Cafeできいてます `,
+      a(
+        {
+          href: `https://cafe.kiite.jp/`,
+        },
+        `https://cafe.kiite.jp/`,
+      ),
+    ).render(),
   };
 };
 

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Feed, Item } from "feed";
-import { History, db } from "@/db.js";
+import { History, db } from "@/db.ts";
 
 const app = new Hono();
 

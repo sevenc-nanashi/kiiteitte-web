@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
-import { host } from "@/env.js";
+import { host } from "@/env.ts";
 
 const wellKnown = new Hono();
 

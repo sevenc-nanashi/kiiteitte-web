@@ -6,7 +6,8 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "noEmit": true,
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]

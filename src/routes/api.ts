@@ -1,8 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
-import { host } from "@/env.js";
-import { db } from "@/db.js";
+import { host } from "@/env.ts";
+import { db } from "@/db.ts";
 import consola from "consola";
 
 const api = new Hono();

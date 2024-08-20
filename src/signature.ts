@@ -1,5 +1,5 @@
 import { signRequest as signRequestRaw } from "http-signature";
-import { host } from "./env.js";
+import { host } from "./env.ts";
 import { createHash } from "crypto";
 
 export const signRequest = async (

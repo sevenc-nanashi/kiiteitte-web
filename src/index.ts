@@ -1,13 +1,13 @@
 import { Hono } from "hono";
-import { setup as setupDb } from "./db.js";
+import { setup as setupDb } from "./db.ts";
 import { consola } from "consola";
-import wellKnown from "./routes/wellKnown.js";
-import ap from "./routes/ap.js";
-import api from "./routes/api.js";
-import feed from "./routes/feed.js";
+import wellKnown from "./routes/wellKnown.ts";
+import ap from "./routes/ap.ts";
+import api from "./routes/api.ts";
+import feed from "./routes/feed.ts";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/bun";
-import { cafeWatcher } from "./cafeWatcher.js";
+import { cafeWatcher } from "./cafeWatcher.ts";
 
 const log = consola.withTag("index");
 

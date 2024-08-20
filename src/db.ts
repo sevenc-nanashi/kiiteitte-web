@@ -1,5 +1,6 @@
 import { Client } from "pg";
 import { consola } from "consola";
+import { dbConfig } from "./env.ts";
 
 const log = consola.withTag("db");
 
@@ -8,11 +9,7 @@ type Version = {
 };
 
 export const db = new Client({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT!),
-  database: process.env.DB_NAME,
+  ...dbConfig,
 });
 
 export type Follower = {

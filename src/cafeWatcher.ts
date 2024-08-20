@@ -1,7 +1,7 @@
 import { consola } from "consola";
-import { Follower, History, db } from "./db.js";
-import { signRequest } from "./signature.js";
-import { historyToActivity, noteToCreateActivity } from "./activity.js";
+import { Follower, History, db } from "./db.ts";
+import { signRequest } from "./signature.ts";
+import { historyToActivity, noteToCreateActivity } from "./activity.ts";
 
 const log = consola.withTag("cafeWatcher");
 

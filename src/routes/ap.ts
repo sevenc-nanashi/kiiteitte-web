@@ -6,13 +6,13 @@ import {
   APOrderedCollectionPage,
   APRoot,
 } from "activitypub-types";
-import { host } from "@/env.js";
-import { Follower, db } from "@/db.js";
+import { host } from "@/env.ts";
+import { Follower, db } from "@/db.ts";
 import { z } from "zod";
-import { httpSignature } from "@/middleware.js";
+import { httpSignature } from "@/middleware.ts";
 import { consola } from "consola";
-import { signRequest } from "@/signature.js";
-import { noteToCreateActivity, historyToActivity } from "@/activity.js";
+import { signRequest } from "@/signature.ts";
+import { noteToCreateActivity, historyToActivity } from "@/activity.ts";
 
 const log = consola.withTag("ap");
 

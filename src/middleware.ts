@@ -1,6 +1,6 @@
 import { MiddlewareHandler } from "hono";
 import { parseRequest, verifySignature } from "http-signature";
-import { Key, db } from "./db.js";
+import { Key, db } from "./db.ts";
 import { consola } from "consola";
 import { z } from "zod";
 
