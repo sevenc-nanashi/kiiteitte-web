@@ -33,22 +33,47 @@ export const httpSignature: MiddlewareHandler = async (c, next) => {
       headers: {
         Accept: "application/activity+json",
       },
-    })
-      .then((r) => r.json())
-      .catch(() => null);
-    if (!response) {
+    });
+    if (!response.ok) {
+      if (response.status === 410) {
+        // リモートユーザーのDeleteかもしれない
+        const request = c.req.raw.clone();
+        const requestBody = await request.json().catch(() => ({}));
+        const maybeApDeleteRequest = z
+          .object({
+            type: z.literal("Delete"),
+            actor: z.string(),
+            id: z.string(),
+          })
+          .safeParse(requestBody);
+        if (maybeApDeleteRequest.success) {
+          const actorUrl = new URL(maybeApDeleteRequest.data.actor);
+          const idUrl = new URL(maybeApDeleteRequest.data.id);
+          if (
+            actorUrl.origin === idUrl.origin &&
+            actorUrl.pathname === idUrl.pathname
+          ) {
+            log.info(`Remote user deleted: ${maybeApDeleteRequest.data.actor}`);
+            await db.query("DELETE FROM keys WHERE id = $1", [
+              maybeApDeleteRequest.data.actor,
+            ]);
+            c.status(204);
+            return c.body("");
+          }
+        }
+      }
       log.error(`Failed to fetch key: ${parsedHeader.params.keyId}`);
-      c.status(404);
+      c.status(403);
       return c.json({
-        error: "Not Found",
+        error: "Forbidden",
       });
     }
-    const parseResult = key.safeParse(response);
+    const parseResult = key.safeParse(await response.json());
     if (!parseResult.success) {
       log.error(`Failed to parse key: ${parsedHeader.params.keyId}`);
-      c.status(400);
+      c.status(403);
       return c.json({
-        error: "Bad Request",
+        error: "Forbidden",
       });
     }
     if (parseResult.data.publicKey.id !== parsedHeader.params.keyId) {
