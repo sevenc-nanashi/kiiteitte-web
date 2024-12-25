@@ -29,6 +29,10 @@ export const historyToActivity = (history: History): APRoot<APNote> => {
         `https://cafe.kiite.jp/`,
       ),
     ).render(),
+    source: {
+      content: `[♪ <plain>${history.title}</plain>](https://nicovideo.jp/watch/${history.video_id}) #${history.video_id} #Kiite\nKiite Cafeできいてます https://cafe.kiite.jp/`,
+      mediaType: "text/x.misskeymarkdown",
+    },
   };
 };
 
