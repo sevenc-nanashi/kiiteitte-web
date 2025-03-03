@@ -23,7 +23,15 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
       JSON.stringify({ success: false, reason: "No contents" }),
     );
   }
-  const data = typia.json.validateParse<Params>(contents);
+  let parsed;
+  try {
+    parsed = JSON.parse(contents);
+  } catch (e) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: false, reason: "Invalid JSON" }),
+    );
+  }
+  const data = typia.validate<Params[]>(parsed);
   if (!data.success) {
     return ContentService.createTextOutput(
       JSON.stringify({
@@ -32,11 +40,15 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
       }),
     );
   }
-  const params = data.data;
+  if (!data.data.length) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: false, reason: "No data" }),
+    );
+  }
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const lastRow = sheet.getLastRow();
-  const values = [
+  const values = data.data.map((params) => [
     params.video_id,
     params.title,
     params.author,
@@ -48,9 +60,10 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
     params.pickup_user_name,
     params.pickup_user_icon,
     params.pickup_playlist_url,
-  ];
-
-  sheet.getRange(lastRow + 1, 1, 1, values.length).setValues([values]);
+  ]);
+  sheet
+    .getRange(lastRow + 1, 1, values.length, values[0].length)
+    .setValues([values]);
 
   return ContentService.createTextOutput(JSON.stringify({ success: true }));
 }

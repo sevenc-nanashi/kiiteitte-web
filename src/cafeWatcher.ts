@@ -114,6 +114,30 @@ export const cafeWatcher = async () => {
         );
         log.info(`Added: ${history.title} (${history.video_id})`);
       }
+
+      if (gasUrl) {
+        log.info("Notifying Google Apps Script");
+
+        const histories = await db
+          .query<History>("SELECT * FROM histories WHERE id > $1", [
+            latestHistory.id,
+          ])
+          .then((r) => r.rows);
+        const response = await fetch(gasUrl, {
+          method: "POST",
+          body: JSON.stringify(histories),
+        })
+          .then((r) => r.json())
+          .catch(() => ({
+            success: false,
+            reason: "Failed to parse JSON",
+          }));
+        if (response.success) {
+          log.info("Notified Google Apps Script");
+        } else {
+          log.warn(`Failed to notify Google Apps Script: ${response.reason}`);
+        }
+      }
     }
   }
 
@@ -263,7 +287,7 @@ export const cafeWatcher = async () => {
           const body = latestHistory;
           const response = await fetch(gasUrl, {
             method: "POST",
-            body: JSON.stringify(body),
+            body: JSON.stringify([body]),
           })
             .then((r) => r.json())
             .catch(() => ({
