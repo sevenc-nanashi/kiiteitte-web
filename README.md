@@ -24,8 +24,6 @@ ActivityPub 経由でフォローすることもできます。
     "author": "キタニタツヤ/こんにちは谷田さん",
     // 再生された日時。
     "date": "2024-04-20T06:57:25.000Z",
-    // ニコニコ動画のURL。
-    "url": "https://www.nicovideo.jp/watch/sm31084095",
     // サムネイル画像のURL。
     "thumbnail": "https://nicovideo.cdn.nimg.jp/thumbnails/31084095/31084095",
     // この回で増えたお気に入り数。データが存在しない場合（現在再生中、古い記録など）は-1。

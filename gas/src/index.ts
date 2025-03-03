@@ -7,7 +7,6 @@ type Params = {
   title: string;
   author: string;
   date: string;
-  url: string;
   thumbnail: string;
   new_faves: number;
   spins: number;
@@ -45,7 +44,6 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
         params.title,
         params.author,
         params.date,
-        params.url,
         params.thumbnail,
         params.new_faves,
         params.spins,
