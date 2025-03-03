@@ -63,7 +63,7 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
   ]);
   sheet
     .getRange(lastRow + 1, 1, values.length, values[0].length)
-    .setValues([values]);
+    .setValues(values);
 
   return ContentService.createTextOutput(JSON.stringify({ success: true }));
 }
