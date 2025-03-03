@@ -7,10 +7,6 @@
     "dev": "run-p dev:*",
     "build": "vite build"
   },
-  "workspaces": [
-    ".",
-    "./gas"
-  ],
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",
     "consola": "^3.2.3",
