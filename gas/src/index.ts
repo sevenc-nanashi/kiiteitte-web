@@ -27,7 +27,10 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
   const data = typia.json.validateParse<Params>(contents);
   if (!data.success) {
     return ContentService.createTextOutput(
-      JSON.stringify({ success: false, reason: "Invalid JSON" }),
+      JSON.stringify({
+        success: false,
+        reason: `Invalid JSON, ${JSON.stringify(data.errors)}`,
+      }),
     );
   }
   const params = data.data;
@@ -57,4 +60,3 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
 }
 
 globalThis.doPost = doPost;
-
