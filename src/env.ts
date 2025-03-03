@@ -20,7 +20,11 @@ export const dbConfig = {
   database: getEnv("DB_NAME"),
 };
 
+export const gasUrl = process.env["GAS_URL"];
+
 log.info(`HOST: ${host}`);
 log.info(
   `Database: ${dbConfig.database} on ${dbConfig.host}:${dbConfig.port} as ${dbConfig.user}`,
 );
+
+log.info(`Google Apps Script: ${gasUrl || "(disabled)"}`);

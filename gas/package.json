@@ -1,0 +1,20 @@
+{
+  "name": "gas",
+  "type": "module",
+  "scripts": {
+    "build": "bun run tools/build.ts",
+    "clasp": "clasp",
+    "deploy": "run-s build deploy:push",
+    "deploy:push": "bun run tools/deploy.ts"
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.5.0",
+    "@ryoppippi/unplugin-typia": "^1.2.0",
+    "@types/bun": "latest",
+    "@types/google-apps-script": "^1.0.97",
+    "npm-run-all2": "^7.0.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

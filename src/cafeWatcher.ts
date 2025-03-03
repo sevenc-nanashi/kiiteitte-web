@@ -2,6 +2,7 @@ import { consola } from "consola";
 import { Follower, History, db } from "./db.ts";
 import { signRequest } from "./signature.ts";
 import { historyToActivity, noteToCreateActivity } from "./activity.ts";
+import { gasUrl } from "./env.ts";
 
 const log = consola.withTag("cafeWatcher");
 
@@ -135,9 +136,7 @@ export const cafeWatcher = async () => {
         new Date().getTime();
       if (untilNextSong < 10000) {
         log.info(`Song is too close: ${untilNextSong}ms, waiting more`);
-        await waitUntil(
-          new Date(temporaryData.start_time).getTime() + 10000
-        );
+        await waitUntil(new Date(temporaryData.start_time).getTime() + 10000);
         continue;
       }
       await waitUntil(
@@ -258,6 +257,25 @@ export const cafeWatcher = async () => {
         log.info(
           `Updated latest song stat: ${newFaves} new faves, ${spinCount} spins`,
         );
+
+        if (gasUrl) {
+          log.info("Notifying Google Apps Script");
+          const body = latestHistory;
+          const response = await fetch(gasUrl, {
+            method: "POST",
+            body: JSON.stringify(body),
+          })
+            .then((r) => r.json())
+            .catch(() => ({
+              success: false,
+              reason: "Failed to parse JSON",
+            }));
+          if (response.success) {
+            log.info("Notified Google Apps Script");
+          } else {
+            log.warn(`Failed to notify Google Apps Script: ${response.reason}`);
+          }
+        }
       }
 
       log.info("Waiting for next song");
