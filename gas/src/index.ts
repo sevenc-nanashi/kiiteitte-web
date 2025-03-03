@@ -50,7 +50,7 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
     params.pickup_playlist_url,
   ];
 
-  sheet.getRange(lastRow + 1, 1, 1, values.length).setValues([]);
+  sheet.getRange(lastRow + 1, 1, 1, values.length).setValues([values]);
 
   return ContentService.createTextOutput(JSON.stringify({ success: true }));
 }
