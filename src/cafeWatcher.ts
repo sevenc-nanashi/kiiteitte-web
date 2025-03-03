@@ -284,7 +284,11 @@ export const cafeWatcher = async () => {
 
         if (gasUrl) {
           log.info("Notifying Google Apps Script");
-          const body = latestHistory;
+          const body = {
+            ...latestHistory,
+            new_faves: newFaves,
+            spins: spinCount,
+          };
           const response = await fetch(gasUrl, {
             method: "POST",
             body: JSON.stringify([body]),
