@@ -36,23 +36,21 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const lastRow = sheet.getLastRow();
-  sheet
-    .getRange(lastRow + 1, 1, 1, 12)
-    .setValues([
-      [
-        params.video_id,
-        params.title,
-        params.author,
-        params.date,
-        params.thumbnail,
-        params.new_faves,
-        params.spins,
-        params.pickup_user_url,
-        params.pickup_user_name,
-        params.pickup_user_icon,
-        params.pickup_playlist_url,
-      ],
-    ]);
+  const values = [
+    params.video_id,
+    params.title,
+    params.author,
+    params.date,
+    params.thumbnail,
+    params.new_faves,
+    params.spins,
+    params.pickup_user_url,
+    params.pickup_user_name,
+    params.pickup_user_icon,
+    params.pickup_playlist_url,
+  ];
+
+  sheet.getRange(lastRow + 1, 1, 1, values.length).setValues([]);
 
   return ContentService.createTextOutput(JSON.stringify({ success: true }));
 }
