@@ -14,6 +14,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       GAS_URL: ${GAS_URL}
+      HF_REPOSITORY: ${HF_REPOSITORY}
     depends_on:
       - db
   db:
