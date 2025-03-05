@@ -136,7 +136,7 @@ export const updateHuggingFace = async () => {
   log.info("Committing changes");
   await Bun.spawn({ cmd: ["git", "add", "."], cwd: root }).exited;
   const exitCode = await Bun.spawn({
-    cmd: ["git", "commit", "-m", "chore: Update histories"],
+    cmd: ["git", "commit", "-m", "chore: 自動更新"],
     cwd: root,
   }).exited;
   if (exitCode !== 0) {
