@@ -5,7 +5,7 @@ type Params = {
   id: number;
   video_id: string;
   title: string;
-  author: string;
+  author: string | null;
   date: string;
   thumbnail: string;
   new_faves: number;
@@ -51,7 +51,7 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
   const values = data.data.map((params) => [
     params.video_id,
     params.title,
-    params.author,
+    params.author ?? "",
     params.date,
     params.thumbnail,
     params.new_faves,
