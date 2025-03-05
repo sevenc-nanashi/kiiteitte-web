@@ -89,7 +89,22 @@ export const updateHuggingFace = async () => {
         handle = await fs.open(file, "a");
         fileHandles.set(file, handle);
       }
-      await handle.write(JSON.stringify(history) + "\n");
+      await handle.write(
+        JSON.stringify({
+          video_id: history.video_id,
+          title: history.title,
+          author: history.author,
+          thumbnail: history.thumbnail,
+          date: history.date,
+          new_faves: history.new_faves === -1 ? null : history.new_faves,
+          spins: history.spins === -1 ? null : history.spins,
+
+          pickup_user_url: history.pickup_user_url,
+          pickup_user_name: history.pickup_user_name,
+          pickup_user_icon: history.pickup_user_icon,
+          pickup_playlist_url: history.pickup_playlist_url,
+        }) + "\n",
+      );
     }
 
     lastDate = new Date(unreadHistories[unreadHistories.length - 1].date);
