@@ -124,7 +124,7 @@ export const updateHuggingFace = async () => {
 
   // Commit for every 1 hour
   const lastCommit = Bun.spawn({
-    cmd: ["git", "log", "-1", "--format=%cd", "--date=iso"],
+    cmd: ["git", "log", "-1", "--format=%ct", "--date=iso"],
     cwd: root,
   }).stdout;
   const lastCommitDate = new Date(
