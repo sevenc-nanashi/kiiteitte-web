@@ -19,7 +19,7 @@ export const setupHuggingFace = async () => {
   }
 
   log.info(`Cloning Hugging Face repository into ${root}`);
-  await Bun.spawn({ cmd: ["git", "clone", hfRepository, root] }).exited;
+  await Bun.spawn({ cmd: ["git", "clone", hfRepository, root, "--depth=1"] }).exited;
   if (!(await fs.stat(root).catch(() => null))) {
     throw new Error("Failed to clone repository");
   }
