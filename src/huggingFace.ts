@@ -131,8 +131,9 @@ export const updateHuggingFace = async () => {
     parseInt(await new Response(lastCommit).text().then((t) => t.trim())) *
       1000,
   );
+  log.info(`Last commit was at ${lastCommitDate}`);
   if (Date.now() - lastCommitDate.getTime() < 60 * 60 * 1000) {
-    log.info(`Last commit was at ${lastCommitDate}, skipping commit`);
+    log.info(`Last commit was less than 1 hour ago, skipping commit`);
     return;
   }
 
