@@ -95,7 +95,10 @@ export const updateHuggingFace = async () => {
           title: history.title,
           author: history.author,
           thumbnail: history.thumbnail,
-          date: history.date,
+          date: new Date(history.date)
+            .toISOString()
+            .replace("T", " ")
+            .replace("Z", ""),
           new_faves: history.new_faves === -1 ? null : history.new_faves,
           spins: history.spins === -1 ? null : history.spins,
 
