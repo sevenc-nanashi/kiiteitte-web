@@ -3,7 +3,9 @@
 [Kiite Cafe](https://cafe.kiite.jp) の曲を通知したり、履歴を確認したりするための Web サイト。\
 ActivityPub 経由でフォローすることもできます。
 
-また、今までの曲の履歴を確認できるスプレッドシートも公開しています：<https://docs.google.com/spreadsheets/d/1EAV3AnS6pgC2roSAlQBopl1GlsEYGyEKNElcZwmvkfc/edit?usp=sharing>
+また、今までの曲の履歴を確認できるデータセットも公開しています：
+- スプレッドシート：<https://docs.google.com/spreadsheets/d/1EAV3AnS6pgC2roSAlQBopl1GlsEYGyEKNElcZwmvkfc/edit?usp=sharing>
+- HuggingFace：<https://huggingface.co/datasets/sevenc-nanashi/kiiteitte>
 
 ## API
 
