@@ -120,6 +120,19 @@ export const updateHuggingFace = async () => {
 
   log.info("Histories written");
 
+  // Commit for every 1 hour
+  const lastCommit = Bun.spawn({
+    cmd: ["git", "log", "-1", "--format=%cd", "--date=iso"],
+    cwd: root,
+  }).stdout;
+  const lastCommitDate = new Date(
+    parseInt(await new Response(lastCommit).text()) * 1000,
+  );
+  if (Date.now() - lastCommitDate.getTime() < 60 * 60 * 1000) {
+    log.info(`Last commit was at ${lastCommitDate}, skipping commit`);
+    return;
+  }
+
   log.info("Committing changes");
   await Bun.spawn({ cmd: ["git", "add", "."], cwd: root }).exited;
   const exitCode = await Bun.spawn({
