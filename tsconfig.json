@@ -2,11 +2,11 @@
   "compilerOptions": {
     "strict": true,
     "target": "ESNext",
-    "module": "NodeNext",
+    "module": "ESNext",
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "noEmit": true,
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "paths": {

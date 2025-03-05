@@ -3,6 +3,7 @@ import { Follower, History, db } from "./db.ts";
 import { signRequest } from "./signature.ts";
 import { historyToActivity, noteToCreateActivity } from "./activity.ts";
 import { gasUrl } from "./env.ts";
+import { updateHuggingFace } from "./huggingFace.ts";
 
 const log = consola.withTag("cafeWatcher");
 
@@ -36,6 +37,134 @@ const waitUntil = async (timestamp: number) => {
   await new Promise((resolve) => setTimeout(resolve, waitDuration));
 };
 
+const insertHistory = async (
+  song: Song,
+  user: KiiteUser | undefined,
+  priorityReason: Song["reasons"][0] | undefined,
+  newFaves: number = -1,
+  spinCount: number = -1,
+) => {
+  const dbHistory = await db
+    .query<History>(
+      "INSERT INTO histories (" +
+        "video_id, title, author, date, thumbnail, pickup_user_url, pickup_user_name, pickup_user_icon, pickup_playlist_url, new_faves, spins" +
+        ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
+
+      [
+        song.video_id,
+        song.title,
+        song.artist_name,
+        new Date(song.start_time),
+        song.thumbnail,
+        user ? `https://kiite.jp/user/${user.user_name}` : "",
+        user?.nickname ?? "",
+        user?.avatar_url ?? "",
+        priorityReason
+          ? `https://kiite.jp/playlist/${priorityReason.list_id}`
+          : "",
+        newFaves,
+        spinCount,
+      ],
+    )
+    .then((r) => r.rows[0]);
+  log.info(`Added: ${song.title} (${song.video_id})`);
+
+  return dbHistory;
+};
+const notifyFollowers = async (history: History) => {
+  const inboxes = new Set<string>();
+  for (const follower of await db
+    .query<Follower>("SELECT * FROM followers")
+    .then((r) => r.rows)) {
+    if (follower.shared_inbox) {
+      inboxes.add(follower.shared_inbox);
+    } else {
+      inboxes.add(follower.inbox);
+    }
+  }
+
+  log.info(`Notifying ${inboxes.size} inboxes`);
+  const body = noteToCreateActivity(historyToActivity(history));
+  for (const inbox of inboxes) {
+    const inboxUrl = new URL(inbox);
+    const headers = await signRequest("POST", JSON.stringify(body), inboxUrl);
+    fetch(inbox, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    }).then(async (response) => {
+      if (response.ok) {
+        log.info(`Notified ${inbox}`);
+      } else {
+        log.warn(
+          `Failed to notify ${inbox}: ${await response.text().then((t) => t.split("\n")[0])}`,
+        );
+      }
+    });
+  }
+};
+
+export const updateSecondLatestHistory = async (currentVideoId: string) => {
+  const timetable: (Song & { id: number })[] = await fetch(
+    "https://cafe.kiite.jp/api/cafe/timetable?limit=2",
+  ).then((r) => r.json());
+  const latestSong =
+    timetable[timetable.findIndex((s) => s.video_id === currentVideoId) + 1];
+  log.info(
+    `Updating latest song stat: ${latestSong.title} (${latestSong.video_id})`,
+  );
+  const spins: Record<string, number[]> = await fetch(
+    `https://cafe.kiite.jp/api/cafe/rotate_users?ids=${latestSong.id}`,
+  ).then((r) => r.json());
+  const newFaves = (latestSong.new_fav_user_ids ?? []).length;
+  const spinCount = Object.values(spins).flat().length;
+
+  const secondLatestHistory = await db
+    .query<History>(
+      "SELECT * FROM histories WHERE video_id = $1 ORDER BY date DESC LIMIT 1",
+      [latestSong.video_id],
+    )
+    .then((r) => r.rows[0]);
+
+  if (!secondLatestHistory) {
+    log.warn("Latest song not found");
+  } else {
+    await db.query(
+      "UPDATE histories SET new_faves = $1, spins = $2 WHERE id = $3",
+      [newFaves, spinCount, secondLatestHistory.id],
+    );
+    log.info(
+      `Updated latest song stat: ${newFaves} new faves, ${spinCount} spins`,
+    );
+
+    secondLatestHistory.new_faves = newFaves;
+    secondLatestHistory.spins = spinCount;
+  }
+  return secondLatestHistory;
+};
+
+export const notifyGas = async (histories: History[]) => {
+  if (gasUrl) {
+    log.info("Notifying Google Apps Script");
+    const response = await fetch(gasUrl, {
+      method: "POST",
+      body: JSON.stringify(histories),
+    })
+      .then((r) => r.json())
+      .catch(() => ({
+        success: false,
+        reason: "Failed to parse JSON",
+      }));
+    if (response.success) {
+      log.info("Notified Google Apps Script");
+    } else {
+      log.warn(`Failed to notify Google Apps Script: ${response.reason}`);
+    }
+  } else {
+    log.warn("Google Apps Script URL not found");
+  }
+};
+
 export const cafeWatcher = async () => {
   log.info("Cafe watcher started");
 
@@ -63,17 +192,19 @@ export const cafeWatcher = async () => {
       log.info(
         `Adding ${lastHistoryIndex === -1 ? 100 : lastHistoryIndex} songs to the database`,
       );
-      const histories = timetable.slice(
+      const unknownTimetables = timetable.slice(
         0,
         lastHistoryIndex === -1 ? 100 : lastHistoryIndex,
       );
 
       const spins: Record<string, number[]> = await fetch(
-        `https://cafe.kiite.jp/api/cafe/rotate_users?ids=${histories
+        `https://cafe.kiite.jp/api/cafe/rotate_users?ids=${unknownTimetables
           .map((h) => h.id)
           .join(",")}`,
       ).then((r) => r.json());
-      for (const history of histories) {
+
+      const histories: History[] = [];
+      for (const history of unknownTimetables) {
         const priorityReason = history.reasons.find(
           (r) => r.type === "priority_playlist",
         );
@@ -91,53 +222,19 @@ export const cafeWatcher = async () => {
         const newFaves = (history.new_fav_user_ids ?? []).length;
         const spinCount = spins[history.id]?.length ?? -1;
 
-        await db.query(
-          "INSERT INTO histories (" +
-            "video_id, title, author, date, thumbnail, pickup_user_url, pickup_user_name, pickup_user_icon, pickup_playlist_url, new_faves, spins" +
-            ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-
-          [
-            history.video_id,
-            history.title,
-            history.artist_name,
-            new Date(history.start_time),
-            history.thumbnail,
-            user ? `https://kiite.jp/user/${user.user_name}` : "",
-            user?.nickname ?? "",
-            user?.avatar_url ?? "",
-            priorityReason
-              ? `https://kiite.jp/playlist/${priorityReason.list_id}`
-              : "",
+        histories.push(
+          await insertHistory(
+            history,
+            user,
+            priorityReason,
             newFaves,
             spinCount,
-          ],
+          ),
         );
-        log.info(`Added: ${history.title} (${history.video_id})`);
       }
 
-      if (gasUrl) {
-        log.info("Notifying Google Apps Script");
-
-        const histories = await db
-          .query<History>("SELECT * FROM histories WHERE id > $1", [
-            latestHistory.id,
-          ])
-          .then((r) => r.rows);
-        const response = await fetch(gasUrl, {
-          method: "POST",
-          body: JSON.stringify(histories),
-        })
-          .then((r) => r.json())
-          .catch(() => ({
-            success: false,
-            reason: "Failed to parse JSON",
-          }));
-        if (response.success) {
-          log.info("Notified Google Apps Script");
-        } else {
-          log.warn(`Failed to notify Google Apps Script: ${response.reason}`);
-        }
-      }
+      await notifyGas(histories);
+      await updateHuggingFace();
     }
   }
 
@@ -167,27 +264,17 @@ export const cafeWatcher = async () => {
         new Date(temporaryData.start_time).getTime() + timeDifference - 10000,
       );
 
-      const data = (await fetch(
+      const nextSong = (await fetch(
         "https://cafe.kiite.jp/api/cafe/next_song",
       ).then((r) => r.json())) as Song | null;
-      if (!data) {
+      if (!nextSong) {
         log.info("Cafe is closed, sleeping 1 minute");
         await new Promise((resolve) => setTimeout(resolve, 60000));
         continue;
       }
-      log.info(`Next song: ${data.title} (${data.video_id})`);
-      const inboxes = new Set<string>();
-      for (const follower of await db
-        .query<Follower>("SELECT * FROM followers")
-        .then((r) => r.rows)) {
-        if (follower.shared_inbox) {
-          inboxes.add(follower.shared_inbox);
-        } else {
-          inboxes.add(follower.inbox);
-        }
-      }
+      log.info(`Next song: ${nextSong.title} (${nextSong.video_id})`);
 
-      const priorityReason = data.reasons.find(
+      const priorityReason = nextSong.reasons.find(
         (r) => r.type === "priority_playlist",
       );
       let user: KiiteUser | undefined;
@@ -200,116 +287,27 @@ export const cafeWatcher = async () => {
       } else {
         log.info(`No priority playlist found`);
       }
-      await waitUntil(new Date(data.start_time).getTime() + timeDifference);
+      await waitUntil(new Date(nextSong.start_time).getTime() + timeDifference);
 
-      const history = await db
-        .query<History>(
-          "INSERT INTO histories (" +
-            "video_id, title, author, date, thumbnail, pickup_user_url, pickup_user_name, pickup_user_icon, pickup_playlist_url, new_faves, spins" +
-            ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
-
-          [
-            data.video_id,
-            data.title,
-            data.artist_name,
-            new Date(data.start_time),
-            data.thumbnail,
-            user ? `https://kiite.jp/user/${user.user_name}` : "",
-            user?.nickname ?? "",
-            user?.avatar_url ?? "",
-            priorityReason
-              ? `https://kiite.jp/playlist/${priorityReason.list_id}`
-              : "",
-            -1,
-            -1,
-          ],
-        )
-        .then((r) => r.rows[0]);
+      const history = await insertHistory(
+        nextSong,
+        user,
+        priorityReason,
+        -1,
+        -1,
+      );
       log.info(`Now playing: ${history.title} (${history.video_id})`);
 
-      log.info(`Notifying ${inboxes.size} inboxes`);
-      const body = noteToCreateActivity(historyToActivity(history));
-      for (const inbox of inboxes) {
-        const inboxUrl = new URL(inbox);
-        const headers = await signRequest(
-          "POST",
-          JSON.stringify(body),
-          inboxUrl,
-        );
-        fetch(inbox, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body),
-        }).then(async (response) => {
-          if (response.ok) {
-            log.info(`Notified ${inbox}`);
-          } else {
-            log.warn(
-              `Failed to notify ${inbox}: ${await response.text().then((t) => t.split("\n")[0])}`,
-            );
-          }
-        });
-      }
+      await notifyFollowers(history);
 
-      const timetable: (Song & { id: number })[] = await fetch(
-        "https://cafe.kiite.jp/api/cafe/timetable?limit=2",
-      ).then((r) => r.json());
-      const latestSong =
-        timetable[timetable.findIndex((s) => s.video_id === data.video_id) + 1];
-      log.info(
-        `Updating latest song stat: ${latestSong.title} (${latestSong.video_id})`,
-      );
-      const spins: Record<string, number[]> = await fetch(
-        `https://cafe.kiite.jp/api/cafe/rotate_users?ids=${latestSong.id}`,
-      ).then((r) => r.json());
-      const newFaves = (latestSong.new_fav_user_ids ?? []).length;
-      const spinCount = Object.values(spins).flat().length;
-
-      const latestHistory = await db
-        .query<History>(
-          "SELECT * FROM histories WHERE video_id = $1 ORDER BY date DESC LIMIT 1",
-          [latestSong.video_id],
-        )
-        .then((r) => r.rows[0]);
-      if (!latestHistory) {
-        log.warn("Latest song not found");
-      } else {
-        await db.query(
-          "UPDATE histories SET new_faves = $1, spins = $2 WHERE id = $3",
-          [newFaves, spinCount, latestHistory.id],
-        );
-        log.info(
-          `Updated latest song stat: ${newFaves} new faves, ${spinCount} spins`,
-        );
-
-        if (gasUrl) {
-          log.info("Notifying Google Apps Script");
-          const body = {
-            ...latestHistory,
-            new_faves: newFaves,
-            spins: spinCount,
-          };
-          const response = await fetch(gasUrl, {
-            method: "POST",
-            body: JSON.stringify([body]),
-          })
-            .then((r) => r.json())
-            .catch(() => ({
-              success: false,
-              reason: "Failed to parse JSON",
-            }));
-          if (response.success) {
-            log.info("Notified Google Apps Script");
-          } else {
-            log.warn(`Failed to notify Google Apps Script: ${response.reason}`);
-          }
-        }
-      }
+      const lastHistory = await updateSecondLatestHistory(nextSong.video_id);
+      await notifyGas([lastHistory]);
+      await updateHuggingFace();
 
       log.info("Waiting for next song");
       await waitUntil(
-        new Date(data.start_time).getTime() +
-          data.msec_duration +
+        new Date(nextSong.start_time).getTime() +
+          nextSong.msec_duration +
           timeDifference -
           10000,
       );

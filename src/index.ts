@@ -8,6 +8,7 @@ import feed from "./routes/feed.ts";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/bun";
 import { cafeWatcher } from "./cafeWatcher.ts";
+import { setupHuggingFace, updateHuggingFace } from "./huggingFace.ts";
 
 const log = consola.withTag("index");
 
@@ -54,8 +55,9 @@ if (Bun.env.NODE_ENV === "development") {
   app.use(serveStatic({ root: "./dist" }));
 }
 
-
 await setupDb();
+await setupHuggingFace();
+await updateHuggingFace();
 cafeWatcher();
 
 export default { ...app, port: Bun.env.PORT };

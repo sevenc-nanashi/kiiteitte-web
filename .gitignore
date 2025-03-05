@@ -6,3 +6,5 @@ dist
 key/*
 !key/.gitkeep
 docker-compose.yml
+
+/huggingface

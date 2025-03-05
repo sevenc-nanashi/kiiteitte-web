@@ -21,6 +21,7 @@ export const dbConfig = {
 };
 
 export const gasUrl = process.env["GAS_URL"];
+export const hfRepository = process.env["HF_REPOSITORY"];
 
 log.info(`HOST: ${host}`);
 log.info(
@@ -28,3 +29,4 @@ log.info(
 );
 
 log.info(`Google Apps Script: ${gasUrl || "(disabled)"}`);
+log.info(`Hugging Face Repository: ${hfRepository ? "enabled" : "disabled"}`);
