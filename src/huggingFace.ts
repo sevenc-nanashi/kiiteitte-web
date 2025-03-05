@@ -19,7 +19,10 @@ export const setupHuggingFace = async () => {
   }
 
   log.info(`Cloning Hugging Face repository into ${root}`);
-  await Bun.spawn({ cmd: ["git", "clone", hfRepository, root, "--depth=1"] }).exited;
+  await Bun.spawn({
+    cmd: ["git", "clone", hfRepository, root, "--depth=1"],
+    stdout: "inherit",
+  }).exited;
   if (!(await fs.stat(root).catch(() => null))) {
     throw new Error("Failed to clone repository");
   }
@@ -125,7 +128,8 @@ export const updateHuggingFace = async () => {
     cwd: root,
   }).stdout;
   const lastCommitDate = new Date(
-    parseInt(await new Response(lastCommit).text()) * 1000,
+    parseInt(await new Response(lastCommit).text().then((t) => t.trim())) *
+      1000,
   );
   if (Date.now() - lastCommitDate.getTime() < 60 * 60 * 1000) {
     log.info(`Last commit was at ${lastCommitDate}, skipping commit`);
