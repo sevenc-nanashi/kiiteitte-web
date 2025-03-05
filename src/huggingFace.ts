@@ -48,7 +48,10 @@ export const updateHuggingFace = async () => {
 
   log.info("Updating Hugging Face repository");
   await Bun.spawn({ cmd: ["git", "reset", "--hard"], cwd: root }).exited;
-  await Bun.spawn({ cmd: ["git", "pull", "--rebase"], cwd: root }).exited;
+  await Bun.spawn({
+    cmd: ["git", "pull", "--autostash", "--rebase"],
+    cwd: root,
+  }).exited;
   log.info("Repository updated");
 
   const historyJsons = await Array.fromAsync(
