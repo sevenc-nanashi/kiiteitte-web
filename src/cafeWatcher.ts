@@ -146,9 +146,14 @@ export const updateSecondLatestHistory = async (currentVideoId: string) => {
 export const notifyGas = async (histories: History[]) => {
   if (gasUrl) {
     log.info("Notifying Google Apps Script");
+    const transformedHistories = histories.map((history) => ({
+      ...history,
+      new_faves: history.new_faves === -1 ? null : history.new_faves,
+      spins: history.spins === -1 ? null : history.spins,
+    }));
     const response = await fetch(gasUrl, {
       method: "POST",
-      body: JSON.stringify(histories),
+      body: JSON.stringify(transformedHistories),
     })
       .then((r) => r.json())
       .catch(() => ({

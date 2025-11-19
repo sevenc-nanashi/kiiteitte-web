@@ -8,8 +8,8 @@ type Params = {
   author: string | null;
   date: string;
   thumbnail: string;
-  new_faves: number;
-  spins: number;
+  new_faves: number | null;
+  spins: number | null;
   pickup_user_url: string;
   pickup_user_name: string;
   pickup_user_icon: string;
@@ -54,8 +54,8 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
     params.author ?? "",
     params.date,
     params.thumbnail,
-    params.new_faves,
-    params.spins,
+    params.new_faves ?? "",
+    params.spins ?? "",
     params.pickup_user_url,
     params.pickup_user_name,
     params.pickup_user_icon,
