@@ -79,7 +79,20 @@ export const updateHuggingFace = async () => {
     log.info(
       `Found ${unreadHistories.length === 100 ? "100+" : unreadHistories.length} unread histories`,
     );
-    for (const history of unreadHistories) {
+    // Filter out records that still have placeholder -1 values for stats
+    const completedHistories = unreadHistories.filter(
+      (h) => h.new_faves !== -1 && h.spins !== -1,
+    );
+    if (completedHistories.length === 0) {
+      log.info(
+        "All unread histories have incomplete stats, will retry on next update",
+      );
+      break;
+    }
+    log.info(
+      `Exporting ${completedHistories.length} completed histories (skipped ${unreadHistories.length - completedHistories.length} incomplete)`,
+    );
+    for (const history of completedHistories) {
       const date = new Date(history.date);
       const year = date.getFullYear();
       const month = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -103,8 +116,8 @@ export const updateHuggingFace = async () => {
           date: new Date(history.date)
             .toISOString()
             .replace(/(.+)T(.+)\..+/, "$1 $2"),
-          new_faves: history.new_faves === -1 ? null : history.new_faves,
-          spins: history.spins === -1 ? null : history.spins,
+          new_faves: history.new_faves,
+          spins: history.spins,
 
           pickup_user_url: history.pickup_user_url,
           pickup_user_name: history.pickup_user_name,
