@@ -237,6 +237,10 @@ async function fillOfflineHistories() {
         0,
         lastHistoryIndex === -1 ? 100 : lastHistoryIndex,
       );
+      unknownTimetables.sort(
+        (a, b) =>
+          new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+      );
 
       const spins: Record<string, number[]> = await fetch(
         `https://cafe.kiite.jp/api/cafe/rotate_users?ids=${unknownTimetables
