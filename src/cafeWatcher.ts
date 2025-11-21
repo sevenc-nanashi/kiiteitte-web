@@ -203,7 +203,7 @@ export const cafeWatcher = async () => {
 
   while (true) {
     try {
-      updateHistory();
+      await updateHistory();
     } catch (e) {
       log.error(e);
     }
