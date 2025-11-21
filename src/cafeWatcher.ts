@@ -30,6 +30,37 @@ type KiiteUser = {
   avatar_url: string;
 };
 
+type PriorityReason = Song["reasons"][0];
+
+const fetchPriorityUser = async (
+  song: Song,
+  titleForLog?: string,
+): Promise<{
+  priorityReason: PriorityReason | undefined;
+  user: KiiteUser | undefined;
+}> => {
+  const priorityReason = song.reasons.find(
+    (reason) => reason.type === "priority_playlist",
+  );
+
+  if (!priorityReason) {
+    log.info("No priority playlist found");
+    return { priorityReason: undefined, user: undefined };
+  }
+
+  if (titleForLog) {
+    log.info(`Priority playlist found for ${titleForLog}`);
+  } else {
+    log.info("Priority playlist found");
+  }
+
+  const users = (await fetch(
+    `https://cafeapi.kiite.jp/api/kiite_users?user_ids=${priorityReason.user_id}&ignore_order=1`,
+  ).then((response) => response.json())) as KiiteUser[];
+
+  return { priorityReason, user: users[0] };
+};
+
 const waitUntil = async (timestamp: number) => {
   const currentTimestamp = new Date().getTime();
   const waitDuration = timestamp - currentTimestamp;
@@ -40,7 +71,7 @@ const waitUntil = async (timestamp: number) => {
 const insertHistory = async (
   song: Song,
   user: KiiteUser | undefined,
-  priorityReason: Song["reasons"][0] | undefined,
+  priorityReason: PriorityReason | undefined,
   newFaves: number = -1,
   spinCount: number = -1,
 ) => {
@@ -144,32 +175,42 @@ export const updateSecondLatestHistory = async (currentVideoId: string) => {
 };
 
 export const notifyGas = async (histories: History[]) => {
-  if (gasUrl) {
-    log.info("Notifying Google Apps Script");
-    const response = await fetch(gasUrl, {
-      method: "POST",
-      body: JSON.stringify(histories),
-    })
-      .then((r) => r.json())
-      .catch(() => ({
-        success: false,
-        reason: "Failed to parse JSON",
-      }));
-    if (response.success) {
-      log.info("Notified Google Apps Script");
-    } else {
-      log.warn(`Failed to notify Google Apps Script: ${response.reason}`);
-    }
-  } else {
+  if (!gasUrl) {
     log.warn("Google Apps Script URL not found");
+    return;
+  }
+  log.info("Notifying Google Apps Script");
+  const response = await fetch(gasUrl, {
+    method: "POST",
+    body: JSON.stringify(histories),
+  })
+    .then((r) => r.json())
+    .catch(() => ({
+      success: false,
+      reason: "Failed to parse JSON",
+    }));
+  if (response.success) {
+    log.info("Notified Google Apps Script");
+  } else {
+    log.warn(`Failed to notify Google Apps Script: ${response.reason}`);
   }
 };
 
 export const cafeWatcher = async () => {
   log.info("Cafe watcher started");
 
-  let timeDifference: number = 0;
+  await fillOfflineHistories();
 
+  while (true) {
+    try {
+      updateHistory();
+    } catch (e) {
+      log.error(e);
+    }
+  }
+};
+
+async function fillOfflineHistories() {
   const latestHistory = await db
     .query<History>("SELECT * FROM histories ORDER BY date DESC LIMIT 1")
     .then((r) => r.rows[0]);
@@ -205,19 +246,10 @@ export const cafeWatcher = async () => {
 
       const histories: History[] = [];
       for (const history of unknownTimetables) {
-        const priorityReason = history.reasons.find(
-          (r) => r.type === "priority_playlist",
+        const { priorityReason, user } = await fetchPriorityUser(
+          history,
+          history.title,
         );
-        let user: KiiteUser | undefined;
-        if (priorityReason) {
-          log.info(`Priority playlist found for ${history.title}`);
-          const users = (await fetch(
-            `https://cafeapi.kiite.jp/api/kiite_users?user_ids=${priorityReason.user_id}&ignore_order=1`,
-          ).then((r) => r.json())) as KiiteUser[];
-          user = users[0];
-        } else {
-          log.info(`No priority playlist found`);
-        }
 
         const newFaves = (history.new_fav_user_ids ?? []).length;
         const spinCount = spins[history.id]?.length ?? -1;
@@ -237,82 +269,60 @@ export const cafeWatcher = async () => {
       await updateHuggingFace();
     }
   }
+}
 
-  while (true) {
-    try {
-      const localTime = new Date();
-      const time = await fetch("https://cafe.kiite.jp/api/cafe/time").then(
-        (r) => r.json(),
-      );
-      const serverTime = new Date(time * 1000);
-      timeDifference = localTime.getTime() - serverTime.getTime();
-      log.info(`Time difference: ${timeDifference}ms`);
+async function updateHistory() {
+  const localTime = new Date();
+  const time = await fetch("https://cafe.kiite.jp/api/cafe/time").then((r) =>
+    r.json(),
+  );
+  const serverTime = new Date(time * 1000);
+  const timeDifference = localTime.getTime() - serverTime.getTime();
+  log.info(`Time difference: ${timeDifference}ms`);
 
-      const temporaryData = (await fetch(
-        "https://cafe.kiite.jp/api/cafe/next_song",
-      ).then((r) => r.json())) as Song;
-      const untilNextSong =
-        new Date(temporaryData.start_time).getTime() +
-        timeDifference -
-        new Date().getTime();
-      if (untilNextSong < 10000) {
-        log.info(`Song is too close: ${untilNextSong}ms, waiting more`);
-        await waitUntil(new Date(temporaryData.start_time).getTime() + 10000);
-        continue;
-      }
-      await waitUntil(
-        new Date(temporaryData.start_time).getTime() + timeDifference - 10000,
-      );
-
-      const nextSong = (await fetch(
-        "https://cafe.kiite.jp/api/cafe/next_song",
-      ).then((r) => r.json())) as Song | null;
-      if (!nextSong) {
-        log.info("Cafe is closed, sleeping 1 minute");
-        await new Promise((resolve) => setTimeout(resolve, 60000));
-        continue;
-      }
-      log.info(`Next song: ${nextSong.title} (${nextSong.video_id})`);
-
-      const priorityReason = nextSong.reasons.find(
-        (r) => r.type === "priority_playlist",
-      );
-      let user: KiiteUser | undefined;
-      if (priorityReason) {
-        log.info(`Priority playlist found`);
-        const users = (await fetch(
-          `https://cafeapi.kiite.jp/api/kiite_users?user_ids=${priorityReason.user_id}&ignore_order=1`,
-        ).then((r) => r.json())) as KiiteUser[];
-        user = users[0];
-      } else {
-        log.info(`No priority playlist found`);
-      }
-      await waitUntil(new Date(nextSong.start_time).getTime() + timeDifference);
-
-      const history = await insertHistory(
-        nextSong,
-        user,
-        priorityReason,
-        -1,
-        -1,
-      );
-      log.info(`Now playing: ${history.title} (${history.video_id})`);
-
-      await notifyFollowers(history);
-
-      const lastHistory = await updateSecondLatestHistory(nextSong.video_id);
-      await notifyGas([lastHistory]);
-      await updateHuggingFace();
-
-      log.info("Waiting for next song");
-      await waitUntil(
-        new Date(nextSong.start_time).getTime() +
-          nextSong.msec_duration +
-          timeDifference -
-          10000,
-      );
-    } catch (e) {
-      log.error(e);
-    }
+  const temporaryData = (await fetch(
+    "https://cafe.kiite.jp/api/cafe/next_song",
+  ).then((r) => r.json())) as Song;
+  const untilNextSong =
+    new Date(temporaryData.start_time).getTime() +
+    timeDifference -
+    new Date().getTime();
+  if (untilNextSong < 10000) {
+    log.info(`Song is too close: ${untilNextSong}ms, waiting more`);
+    await waitUntil(new Date(temporaryData.start_time).getTime() + 10000);
+    return;
   }
-};
+  await waitUntil(
+    new Date(temporaryData.start_time).getTime() + timeDifference - 10000,
+  );
+
+  const nextSong = (await fetch(
+    "https://cafe.kiite.jp/api/cafe/next_song",
+  ).then((r) => r.json())) as Song | null;
+  if (!nextSong) {
+    log.info("Cafe is closed, sleeping 1 minute");
+    await new Promise((resolve) => setTimeout(resolve, 60000));
+    return;
+  }
+  log.info(`Next song: ${nextSong.title} (${nextSong.video_id})`);
+
+  const { priorityReason, user } = await fetchPriorityUser(nextSong);
+  await waitUntil(new Date(nextSong.start_time).getTime() + timeDifference);
+
+  const history = await insertHistory(nextSong, user, priorityReason, -1, -1);
+  log.info(`Now playing: ${history.title} (${history.video_id})`);
+
+  await notifyFollowers(history);
+
+  const lastHistory = await updateSecondLatestHistory(nextSong.video_id);
+  await notifyGas([lastHistory]);
+  await updateHuggingFace();
+
+  log.info("Waiting for next song");
+  await waitUntil(
+    new Date(nextSong.start_time).getTime() +
+      nextSong.msec_duration +
+      timeDifference -
+      10000,
+  );
+}

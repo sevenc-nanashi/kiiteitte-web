@@ -69,7 +69,7 @@ export const updateHuggingFace = async () => {
   while (true) {
     const unreadHistories = await db
       .query<History>(
-        "SELECT * FROM histories WHERE date > $1 ORDER BY date LIMIT 100",
+        "SELECT * FROM histories WHERE date > $1 AND new_faves != -1 ORDER BY date ASC LIMIT 100",
         [lastDate],
       )
       .then((r) => r.rows);
@@ -103,9 +103,8 @@ export const updateHuggingFace = async () => {
           date: new Date(history.date)
             .toISOString()
             .replace(/(.+)T(.+)\..+/, "$1 $2"),
-          new_faves: history.new_faves === -1 ? null : history.new_faves,
-          spins: history.spins === -1 ? null : history.spins,
-
+          new_faves: history.new_faves,
+          spins: history.spins,
           pickup_user_url: history.pickup_user_url,
           pickup_user_name: history.pickup_user_name,
           pickup_user_icon: history.pickup_user_icon,
