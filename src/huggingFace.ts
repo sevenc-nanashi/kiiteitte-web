@@ -109,6 +109,7 @@ export const updateHuggingFace = async () => {
           pickup_user_name: history.pickup_user_name,
           pickup_user_icon: history.pickup_user_icon,
           pickup_playlist_url: history.pickup_playlist_url,
+          users: history.users,
         }) + "\n",
       );
     }

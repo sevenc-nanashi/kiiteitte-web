@@ -80,7 +80,7 @@ const host = window.location.origin;
 <style scoped lang="scss">
 .desktop-dummy {
   display: none;
-  @media (min-width: 768px) {
+  @media (width > 1024px) {
     display: block;
     width: 24rem;
     padding: 1rem;
@@ -88,7 +88,7 @@ const host = window.location.origin;
 }
 .app-info {
   width: calc(100% - 2rem);
-  @media (min-width: 768px) {
+  @media (width > 1024px) {
     width: 24rem;
     position: fixed;
   }

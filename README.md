@@ -40,6 +40,8 @@ ActivityPub 経由でフォローすることもできます。
     "pickup_user_icon": "https://d7209z8dzwjpy.cloudfront.net/avatar/ujrpiIEhaYlMUifXiG2tPJXP5v4WSDRAzh0NWLlw.jpg",
     // イチ推しリストのプレイリストのURL。無い場合は空文字列。
     "pickup_playlist_url": "https://kiite.jp/playlist/1HVF3YkW0b",
+    // 曲の終了時点でKiite Cafe内にいるユーザー数。データが存在しない場合は-1。
+    "users": -1
   },
   // ...
 ]

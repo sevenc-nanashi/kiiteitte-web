@@ -101,11 +101,15 @@ const fetchMoreHistory = async (state: {
 .container {
   display: grid;
   width: 100%;
-  @media (max-width: 767px) {
+
+  grid-template-rows: 1fr;
+  grid-template-columns: auto 1fr;
+
+  @media (width <= 1024px) {
     grid-template-rows: auto 1fr;
     grid-template-columns: 1fr;
   }
-  grid-template-columns: auto 1fr;
+
   padding: 1rem;
   gap: 1rem;
   .background {

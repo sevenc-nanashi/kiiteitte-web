@@ -43,6 +43,7 @@ export type History = {
   pickup_playlist_url: string;
   new_faves: number;
   spins: number;
+  users: number;
 };
 
 export const setup = async () => {
@@ -159,6 +160,11 @@ export const setup = async () => {
         [follower.url, follower.inbox, follower.shared_inbox],
       );
     }
+    version++;
+  }
+  if (version === 8) {
+    log.info("8: Adding users column to histories table...");
+    await db.query("ALTER TABLE histories ADD COLUMN users INT");
     version++;
   }
 

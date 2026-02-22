@@ -74,12 +74,13 @@ const insertHistory = async (
   priorityReason: PriorityReason | undefined,
   newFaves: number = -1,
   spinCount: number = -1,
+  users: number = -1,
 ) => {
   const dbHistory = await db
     .query<History>(
       "INSERT INTO histories (" +
-        "video_id, title, author, date, thumbnail, pickup_user_url, pickup_user_name, pickup_user_icon, pickup_playlist_url, new_faves, spins" +
-        ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
+        "video_id, title, author, date, thumbnail, pickup_user_url, pickup_user_name, pickup_user_icon, pickup_playlist_url, new_faves, spins, users" +
+        ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
 
       [
         song.video_id,
@@ -95,6 +96,7 @@ const insertHistory = async (
           : "",
         newFaves,
         spinCount,
+        users,
       ],
     )
     .then((r) => r.rows[0]);
@@ -150,6 +152,10 @@ export const updateSecondLatestHistory = async (currentVideoId: string) => {
   const newFaves = (latestSong.new_fav_user_ids ?? []).length;
   const spinCount = Object.values(spins).flat().length;
 
+  const userCount: number = await fetch(
+    "https://cafeapi.kiite.jp/api/cafe/user_count",
+  ).then((r) => r.json());
+
   const secondLatestHistory = await db
     .query<History>(
       "SELECT * FROM histories WHERE video_id = $1 ORDER BY date DESC LIMIT 1",
@@ -161,15 +167,16 @@ export const updateSecondLatestHistory = async (currentVideoId: string) => {
     log.warn("Latest song not found");
   } else {
     await db.query(
-      "UPDATE histories SET new_faves = $1, spins = $2 WHERE id = $3",
-      [newFaves, spinCount, secondLatestHistory.id],
+      "UPDATE histories SET new_faves = $1, spins = $2, users = $3 WHERE id = $4",
+      [newFaves, spinCount, userCount, secondLatestHistory.id],
     );
     log.info(
-      `Updated latest song stat: ${newFaves} new faves, ${spinCount} spins`,
+      `Updated latest song stat: ${newFaves} new faves, ${spinCount} spins, ${userCount} users`,
     );
 
     secondLatestHistory.new_faves = newFaves;
     secondLatestHistory.spins = spinCount;
+    secondLatestHistory.users = userCount;
   }
   return secondLatestHistory;
 };

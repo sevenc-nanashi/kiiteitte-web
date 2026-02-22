@@ -14,6 +14,7 @@ type Params = {
   pickup_user_name: string;
   pickup_user_icon: string;
   pickup_playlist_url: string;
+  users: number;
 };
 
 function doPost(e: GoogleAppsScript.Events.DoPost) {
@@ -60,6 +61,7 @@ function doPost(e: GoogleAppsScript.Events.DoPost) {
     params.pickup_user_name,
     params.pickup_user_icon,
     params.pickup_playlist_url,
+    params.users,
   ]);
   sheet
     .getRange(lastRow + 1, 1, values.length, values[0].length)

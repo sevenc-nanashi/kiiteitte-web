@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { History } from "@/db";
 import { computed } from "vue";
-import { mdiHeart, mdiOpenInNew } from "@mdi/js";
+import { mdiHeart, mdiOpenInNew, mdiAccountCircle } from "@mdi/js";
 
 const props = defineProps<{
   history: History;
@@ -23,6 +23,9 @@ const time = computed(() => {
 
 const heartSvg = btoa(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#f0f"><path d="${mdiHeart}" /></svg>`,
+);
+const accountCircleSvg = btoa(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#aaa"><path d="${mdiAccountCircle}" /></svg>`,
 );
 </script>
 <template>
@@ -67,6 +70,8 @@ const heartSvg = btoa(
       <div class="title">{{ props.history.title }}</div>
       <div class="artist">{{ props.history.author }}</div>
       <div class="stat">
+        <img :src="`data:image/svg+xml;base64,${accountCircleSvg}`" class="users" />
+        {{ props.history.users === -1 ? "-" : props.history.users }}
         <span class="spin">回</span>
         {{ props.history.spins === -1 ? "-" : props.history.spins }}
         <img :src="`data:image/svg+xml;base64,${heartSvg}`" class="like" />
@@ -123,9 +128,15 @@ const heartSvg = btoa(
   color: #aaa;
   margin-left: auto;
   display: grid;
-  grid-template-columns: 1rem 3rem 1rem 3rem;
+  grid-template-columns: 1rem 3rem 1rem 3rem 1rem 3rem;
   gap: 0.25rem;
   align-items: center;
+
+  .users {
+    font-size: 1rem;
+    fill: #aaa;
+    width: 1rem;
+  }
   .spin {
     font-size: 0.8rem;
     color: #ff0;
