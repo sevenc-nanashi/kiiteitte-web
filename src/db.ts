@@ -167,6 +167,12 @@ export const setup = async () => {
     await db.query("ALTER TABLE histories ADD COLUMN users INT");
     version++;
   }
+  if (version === 9) {
+    log.info("9: Filling users column in histories table...");
+    await db.query("UPDATE histories SET users = -1 WHERE users IS NULL");
+    await db.query("ALTER TABLE histories ALTER COLUMN users SET NOT NULL");
+    version++;
+  }
 
   log.info("Committing changes...");
   await db.query("UPDATE versions SET version = $1", [version]);
